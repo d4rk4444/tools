@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import { AptosClient, AptosAccount, CoinClient } from "aptos";
 import { ethers } from 'ethers';
-import { timeout, chainRpc, chainContract, chainExplorerTx } from './other.js'
+import { timeout, generateRandomAmount, chainRpc, chainContract, chainExplorerTx } from './other.js'
 import { abiToken } from './abi.js';
 import { getETHAmount } from './DEX.js';
 import { subtract, multiply, divide } from 'mathjs';
@@ -22,17 +22,20 @@ export function toWei(amount, type) {
     const w3 = new Web3();
     return w3.utils.toWei(amount, type);
 }
+export function fromWei(amount, type) {
+    const w3 = new Web3();
+    return w3.utils.fromWei(amount, type);
+}
 export async function sendAllAvax(rpc, toAddress, privateKey) {
     try {
         const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
         const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
-        let amount = await getETHAmount(rpc, wallet).then(function(res) {
-            if (res == 0) {
-                console.log(`${wallet} balance 0 AVAX`);
-                return;
-            }
-        });
-        amount = subtract(amount, 21000 * w3.utils.toWei('51.5', 'gwei'));
+        let amount = await getETHAmount(rpc, wallet);
+        if (amount == 0) {
+            console.log(`Balance 0 AVAX`);
+            return;
+        }
+        amount = subtract(subtract(amount, generateRandomAmount(50, 150, 0)), multiply(21000, w3.utils.toWei('51.5', 'gwei')));
 
         const tx = {
             'from': wallet,
@@ -62,19 +65,19 @@ export async function sendAllETH(rpc, toAddress, privateKey) {
     try {
         const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
         const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
-        let amount = await getETHAmount(rpc, wallet).then(function(res) {
-            if (res == 0) {
-                console.log(`${wallet} balance 0 ETH`);
-                return;
-            }
-        });
-        amount = subtract(amount, 270000 * w3.utils.toWei('0.3', 'gwei'));
+        let amount = await getETHAmount(rpc, wallet);
+        if (amount == 0) {
+            console.log(`Balance 0 ETH`);
+            return;
+        }
+        const gasLimit = generateRandomAmount(340000, 390000, 0);
+        amount = subtract(subtract(amount, generateRandomAmount(50, 150, 0)), multiply(gasLimit, w3.utils.toWei('0.1', 'gwei')));
 
         const tx = {
             'from': wallet,
-            'gas': 270000,
-            'baseFeePerGas': w3.utils.toWei('10', 'gwei'),
-            'maxPriorityFeePerGas': w3.utils.toWei('0.1', 'gwei'),
+            'gas': gasLimit,
+            'baseFeePerGas': w3.utils.toWei('0.1', 'gwei'),
+            //'maxPriorityFeePerGas': w3.utils.toWei('0.1', 'gwei'),
             'chainId': w3.eth.getChainId(),
             'to': toAddress,
             'nonce': await w3.eth.getTransactionCount(wallet),
@@ -98,13 +101,12 @@ export async function sendAllMatic(rpc, toAddress, privateKey) {
     try {
         const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
         const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
-        let amount = await getETHAmount(rpc, wallet).then(function(res) {
-            if (res == 0) {
-                console.log(`${wallet} balance 0 MATIC`);
-                return;
-            }
-        });
-        amount = subtract(amount, 21000 * w3.utils.toWei('1000', 'gwei'));
+        let amount = await getETHAmount(rpc, wallet);
+        if (amount == 0) {
+            console.log(`Balance 0 MATIC`);
+            return;
+        }
+        amount = subtract(subtract(amount, generateRandomAmount(50, 150, 0)), multiply(21000, w3.utils.toWei('1000', 'gwei')));
 
         const tx = {
             'from': wallet,

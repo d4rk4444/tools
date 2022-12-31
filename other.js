@@ -36,13 +36,15 @@ export async function createWallet(quantity) {
     console.log('Ready!');
 }
 
-export async function createAptosAddressFile(privateKey) {
+export async function createAptosAddressFile() {
     const wallets = parseFile('private.txt');
     for (let i = 0; i < wallets.length; i++) {
-        if (i === wallets.length - 1) {
-            fs.writeFileSync("aptosAddress.txt", `${privateToAptosAddress(privateKey)}`, { flag: 'a+' });
+        if (wallets.length > 0) {
+            fs.writeFileSync("aptosAddress.txt", `\n${privateToAptosAddress(wallets[i].slice(2, wallets[i].length))}`, { flag: 'a+' });
+        } else if (i === wallets.length - 1) {
+            fs.writeFileSync("aptosAddress.txt", `${privateToAptosAddress(wallets[i].slice(2, wallets[i].length))}`, { flag: 'a+' });
         } else {
-            fs.writeFileSync("aptosAddress.txt", `${privateToAptosAddress(privateKey)}\n`, { flag: 'a+' });
+            fs.writeFileSync("aptosAddress.txt", `${privateToAptosAddress(wallets[i].slice(2, wallets[i].length))}\n`, { flag: 'a+' });
         }
     }
     console.log('File ready!');
