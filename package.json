@@ -1,5 +1,5 @@
 {
-  "name": "devTools",
+  "name": "dev-tools",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -11,11 +11,13 @@
     "bybit-api": "^3.3.5",
     "chalk": "^5.2.0",
     "console-stamp": "^3.1.0",
+    "crypto": "^1.0.1",
     "crypto-js": "^4.1.1",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "fs": "^0.0.1-security",
     "mathjs": "^11.5.0",
+    "node-binance-api": "^0.13.1",
     "readline-sync": "^1.4.10",
     "web3": "^1.8.1"
   }
