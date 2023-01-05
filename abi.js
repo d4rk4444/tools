@@ -7,6 +7,15 @@ export const abiToken = [
     },
     {
         "type":"function",
+        "name":"allowance",
+        "inputs": [
+            {"name":"owner","type":"address"},
+            {"name":"spender","type":"address"}
+        ],
+        "outputs": [{"name":"amount","type":"uint256"}]
+    },
+    {
+        "type":"function",
         "name":"transfer",
         "inputs": [
             {"name":"recipient","type":"address"},
@@ -66,6 +75,18 @@ export const abiTraderJoe = [
             {"name":"_to","type":"address"},
             {"name":"_deadline","type":"uint256"}
         ]
+    },
+    {
+        "type":"function",
+        "name":"swapExactTokensForTokens",
+        "inputs": [
+            {"name":"_amountIn","type":"uint256"},
+            {"name":"_amountOutMin","type":"uint256"},
+            {"name":"_pairBinSteps","type":"uint256[]"},
+            {"name":"_tokenPath","type":"address[]"},
+            {"name":"_to","type":"address"},
+            {"name":"_deadline","type":"uint256"}
+        ]
     }
 ]
 
@@ -95,6 +116,23 @@ export const abiBtcBridge = [
                     "type": "bytes"
                 }]
             }
+        ]
+    },
+    {
+        "type":"function",
+        "name":"estimateSendAndCallFee",
+        "inputs": [
+            {"name":"_dstChainId","type":"uint16"},
+            {"name":"_toAddress","type":"bytes32"},
+            {"name":"_amount","type":"uint256"},
+            {"name":"_payload","type":"bytes"},
+            {"name":"_dstGasForCall","type":"uint64"},
+            {"name":"_useZro","type":"bool"},
+            {"name":"_adapterParams","type":"bytes"}
+        ],
+        "outputs": [
+            {"name":"nativeFee","type":"uint256"},
+            {"name":"zroFee","type":"uint256"}
         ]
     }
 ]
@@ -129,6 +167,36 @@ export const abiStargate = [
             {"name":"_to","type":"bytes"},
             {"name":"_payload","type":"bytes"}
         ]
+    },
+    {
+        "type":"function",
+        "name":"quoteLayerZeroFee",
+        "inputs": [
+            {"name":"_dstChainId","type":"uint16"},
+            {"name":"_functionType","type":"uint8"},
+            {"name":"_toAddress","type":"bytes"},
+            {"name":"_transferAndCallPayload","type":"bytes"},
+            {
+                "name":"_lzTxParams",
+                "type":"tuple",
+                "components": [{
+                    "name": "dstGasForCall",
+                    "type": "uint256"
+                },
+                {
+                    "name": "dstNativeAmount",
+                    "type": "uint256"
+                },
+                {
+                    "name": "dstNativeAddr",
+                    "type": "bytes"
+                }]
+            }
+        ],
+        "outputs": [
+            {"name":"nativeFee","type":"uint256"},
+            {"name":"zroFee","type":"uint256"}
+        ]
     }
 ]
 
@@ -153,6 +221,29 @@ export const abiAptosBridge = [
                 }]
             },
             {"name":"_adapterParams","type":"bytes"},
+        ]
+    },
+    {
+        "type":"function",
+        "name":"quoteForSend",
+        "inputs": [
+            {
+                "name":"_callParams",
+                "type":"tuple",
+                "components": [{
+                    "name": "refundAddress",
+                    "type": "address"
+                },
+                {
+                    "name": "zroPaymentAddress",
+                    "type": "address"
+                }]
+            },
+            {"name":"_adapterParams","type":"bytes"},
+        ],
+        "outputs": [
+            {"name":"nativeFee","type":"uint256"},
+            {"name":"zroFee","type":"uint256"}
         ]
     }
 ]

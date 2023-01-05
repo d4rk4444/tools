@@ -11,7 +11,6 @@ dotenv.config()
 
 export function privateToAddress(privateKey) {
     const w3 = new Web3();
-
     return w3.eth.accounts.privateKeyToAccount(privateKey).address;
 }
 export function privateToAptosAddress(privateKey) {
@@ -25,6 +24,10 @@ export function toWei(amount, type) {
 export function fromWei(amount, type) {
     const w3 = new Web3();
     return w3.utils.fromWei(amount, type);
+}
+export function toHex(amount) {
+    const w3 = new Web3();
+    return w3.utils.toHex(amount);
 }
 export async function sendAllAvax(rpc, toAddress, privateKey) {
     try {
