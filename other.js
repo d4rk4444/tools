@@ -23,17 +23,20 @@ export function parseFile(file) {
 
 export async function createWallet(quantity) {
     const w3 = new Web3();
-    const wallets = parseFile('private.txt');
     for(let i = 0; i < quantity; i++) {
+        const wallets = parseFile('private.txt');
         const wallet = w3.eth.accounts.create();
-        if (wallets.length > 0) {
-            //fs.writeFileSync("address.txt", `\n${wallet.address}`, { flag: 'a+' });
+        if (wallets[0].length == 64) {
+            fs.writeFileSync("address.txt", `\n${wallet.address}`, { flag: 'a+' });
+            fs.writeFileSync("private.txt", `\n${(wallet.privateKey).slice(2, wallet.privateKey.length)}`, { flag: 'a+' });
+        } else if (wallets.length > 1) {
+            fs.writeFileSync("address.txt", `\n${wallet.address}`, { flag: 'a+' });
             fs.writeFileSync("private.txt", `\n${(wallet.privateKey).slice(2, wallet.privateKey.length)}`, { flag: 'a+' });
         } else if (i == wallets.length - 1) {
-            //fs.writeFileSync("address.txt", `${wallet.address}`, { flag: 'a+' });
+            fs.writeFileSync("address.txt", `${wallet.address}`, { flag: 'a+' });
             fs.writeFileSync("private.txt", `${(wallet.privateKey).slice(2, wallet.privateKey.length)}`, { flag: 'a+' });
         } else {
-            //fs.writeFileSync("address.txt", `${wallet.address}\n`, { flag: 'a+' });
+            fs.writeFileSync("address.txt", `${wallet.address}\n`, { flag: 'a+' });
             fs.writeFileSync("private.txt", `${(wallet.privateKey).slice(2, wallet.privateKey.length)}\n`, { flag: 'a+' });
         }
         await timeout(100);
