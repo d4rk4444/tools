@@ -192,8 +192,8 @@ export async function bridgeUSDCFromPolygonToAvalancheStargate(rpc, amountMwei, 
 
     const tx = {
         'from': wallet,
-        'gas': 700000,
-        'baseFeePerGas': w3.utils.toWei('150', 'gwei'),
+        'gas': 500000,
+        'maxFeePerGas': w3.utils.toWei('100', 'gwei'),
         'maxPriorityFeePerGas': w3.utils.toWei('30', 'gwei'),
         'chainId': w3.eth.getChainId(),
         'to': router,
