@@ -65,6 +65,8 @@ export const chainRpc = {
     Avalanche: 'https://rpc.ankr.com/avalanche',
     Arbitrum: 'https://arb1.arbitrum.io/rpc',
     Aptos: 'https://fullnode.mainnet.aptoslabs.com',
+    Goerli: 'https://eth-goerli.public.blastapi.io',
+    //Consensys: 'https://consensys-zkevm-goerli-prealpha.infura.io/v3/',
 }
 
 export const chainExplorerTx = {
@@ -74,6 +76,7 @@ export const chainExplorerTx = {
     Avalanche: 'https://snowtrace.io/tx/',
     Arbitrum: 'https://arbiscan.io/tx/',
     Aptos: 'https://explorer.aptoslabs.com/txn/',
+    Goerli: 'https://goerli.etherscan.io/tx/',
 }
 
 export const chainContract = {

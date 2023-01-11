@@ -6,8 +6,10 @@
   "type": "module",
   "author": "d4rk444",
   "dependencies": {
+    "@antiadmin/anticaptchaofficial": "^1.0.29",
     "aptos": "^1.4.0",
     "axios": "^1.2.1",
+    "axios-https-proxy-fix": "^0.17.1",
     "bybit-api": "^3.3.5",
     "chalk": "^5.2.0",
     "console-stamp": "^3.1.0",
@@ -16,9 +18,11 @@
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "fs": "^0.0.1-security",
+    "https": "^1.0.0",
     "mathjs": "^11.5.0",
     "node-binance-api": "^0.13.1",
     "readline-sync": "^1.4.10",
+    "tunnel": "^0.0.6",
     "web3": "^1.8.1"
   }
 }

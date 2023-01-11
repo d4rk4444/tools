@@ -196,7 +196,7 @@ export async function approveTokenAvalanche(rpc, amount, tokenAddress, contractA
             }
         });
     } catch (err) {
-        console.log(`Function Error: ${err}`);
+        console.log(`Approval Error: ${err}`);
     }
 }
 

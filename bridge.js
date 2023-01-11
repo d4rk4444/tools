@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import { AptosClient, AptosAccount, CoinClient } from "aptos";
 import { subtract, multiply, divide } from 'mathjs';
 import { abiToken, abiTraderJoe, abiBtcBridge, abiBebop, abiStargate, abiAptosBridge } from './abi.js';
-import { getNonceAptos, privateToAddress, sendTransactionAptos } from './web3.js';
+import { getNonceAptos, privateToAddress, sendTransactionAptos, toWei } from './web3.js';
 import { chainRpc, chainContract, chainExplorerTx } from './other.js';
 import * as dotenv from 'dotenv';
 dotenv.config()
@@ -193,7 +193,7 @@ export async function bridgeUSDCFromPolygonToAvalancheStargate(rpc, amountMwei, 
     const tx = {
         'from': wallet,
         'gas': 500000,
-        'maxFeePerGas': w3.utils.toWei('100', 'gwei'),
+        'maxFeePerGas': w3.utils.toWei('150', 'gwei'),
         'maxPriorityFeePerGas': w3.utils.toWei('30', 'gwei'),
         'chainId': w3.eth.getChainId(),
         'to': router,
@@ -293,4 +293,32 @@ export async function claimUSDCAptos(privateKey) {
         "arguments": [],
         "type": "entry_function_payload"
     }, await getNonceAptos(privateKey), 2200, privateKey);
+}
+
+//CONSENSYS
+export async function bridgeETHFromGoerliToConsensys(rpc, privateKey) {
+        const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
+        const wallet = privateToAddress(privateKey);
+
+        const tx = {
+            'from': wallet,
+            'gas': 65000,
+            'baseFeePerGas': w3.utils.toWei('80', 'gwei'),
+            'maxPriorityFeePerGas': w3.utils.toWei('1.5', 'gwei'),
+            'chainId': w3.eth.getChainId(),
+            'to': '0xe87d317eb8dcc9afe24d9f63d6c760e52bc18a40',
+            'nonce': await w3.eth.getTransactionCount(wallet),
+            'value': toWei('0.017', 'ether'),
+            'data': `0x220b5b82000000000000000000000000${wallet.slice(2)}000000000000000000000000000000000000000000000000002386f26fc100000000000000000000000000000000000000000000000000000000000063e5074300000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000`
+        };
+        
+        const signedTx = await w3.eth.accounts.signTransaction(tx, privateKey);
+
+        await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async function(error, hash) {
+            if (!error) {
+                console.log(`Bridge ETH to ConsenSys zkEVM: ${chainExplorerTx.Goerli + hash}`);
+            } else {
+                console.log(`Error Tx: ${error}`);
+            }
+        });
 }
