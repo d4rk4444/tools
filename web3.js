@@ -1,166 +1,130 @@
 import Web3 from 'web3';
 import { AptosClient, AptosAccount, CoinClient } from "aptos";
-import { ethers } from 'ethers';
-import { timeout, generateRandomAmount, chainRpc, chainContract, chainExplorerTx } from './other.js'
-import { abiToken } from './abi.js';
+import ethers from 'ethers';
+import { timeout, generateRandomAmount, rpc, contract, explorerTx } from './other.js';
+import { abiStargate, abiToken } from './abi.js';
 import { getETHAmount } from './DEX.js';
 import { subtract, multiply, divide } from 'mathjs';
 import * as dotenv from 'dotenv';
 dotenv.config()
 
-
-export function privateToAddress(privateKey) {
+//UTILS
+export const privateToAddress = (privateKey) => {
     const w3 = new Web3();
     return w3.eth.accounts.privateKeyToAccount(privateKey).address;
 }
-export function privateToAptosAddress(privateKey) {
+
+export const privateToAptosAddress = (privateKey) => {
     const mainAccount = new AptosAccount(Uint8Array.from(Buffer.from(privateKey, 'hex')));
     return mainAccount.accountAddress.hexString;
 }
-export function toWei(amount, type) {
-    const w3 = new Web3();
-    return w3.utils.toWei(amount, type);
-}
-export function fromWei(amount, type) {
-    const w3 = new Web3();
-    return w3.utils.fromWei(amount, type);
-}
-export function toHex(amount) {
-    const w3 = new Web3();
-    return w3.utils.toHex(amount);
-}
-export async function sendAllAvax(rpc, toAddress, privateKey) {
-    try {
-        const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
-        const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
-        let amount = await getETHAmount(rpc, wallet);
-        if (amount == 0) {
-            console.log(`Balance 0 AVAX`);
-            return;
-        }
-        amount = subtract(subtract(amount, generateRandomAmount(50, 150, 0)), multiply(21000, w3.utils.toWei('51.5', 'gwei')));
 
-        const tx = {
-            'from': wallet,
-            'gas': 21000,
-            'baseFeePerGas': w3.utils.toWei('35', 'gwei'),
-            'maxPriorityFeePerGas': w3.utils.toWei('1.5', 'gwei'),
-            'chainId': w3.eth.getChainId(),
-            'to': toAddress,
-            'nonce': await w3.eth.getTransactionCount(wallet),
-            'value': amount,
-            'data': null
-        };
-        
-        const signedTx = await w3.eth.accounts.signTransaction(tx, privateKey);
-        await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async function(error, hash) {
-            if (!error) {
-                console.log(`Send AVAX: ${chainExplorerTx.Avalanche + hash}`);
-            } else {
-                console.log(`Error Tx: ${error}`);
-            }
-        });
-    } catch (err) {
-        console.log(`Function Error: ${err}`);
-    }
+export const toWei = (amount, type) => {
+    const w3 = new Web3();
+    return w3.utils.toWei(w3.utils.numberToHex(amount), type);
 }
-export async function sendAllETH(rpc, toAddress, privateKey) {
-    try {
-        const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
-        const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
-        let amount = await getETHAmount(rpc, wallet);
-        if (amount == 0) {
-            console.log(`Balance 0 ETH`);
-            return;
-        }
-        const gasLimit = generateRandomAmount(340000, 390000, 0);
-        amount = subtract(subtract(amount, generateRandomAmount(50, 150, 0)), multiply(gasLimit, w3.utils.toWei('0.1', 'gwei')));
 
-        const tx = {
-            'from': wallet,
-            'gas': gasLimit,
-            'baseFeePerGas': w3.utils.toWei('0.1', 'gwei'),
-            //'maxPriorityFeePerGas': w3.utils.toWei('0.1', 'gwei'),
-            'chainId': w3.eth.getChainId(),
-            'to': toAddress,
-            'nonce': await w3.eth.getTransactionCount(wallet),
-            'value': amount,
-            'data': null
-        };
-        
-        const signedTx = await w3.eth.accounts.signTransaction(tx, privateKey);
-        await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async function(error, hash) {
-            if (!error) {
-                console.log(`Send ETH: ${chainExplorerTx.Arbitrum + hash}`);
-            } else {
-                console.log(`Error Tx: ${error}`);
-            }
-        });
-    } catch (err) {
-        console.log(`Function Error: ${err}`);
-    }
+export const fromWei = (amount, type) => {
+    const w3 = new Web3();
+    return w3.utils.fromWei(w3.utils.numberToHex(amount), type);
 }
-export async function sendAllMatic(rpc, toAddress, privateKey) {
-    try {
-        const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
-        const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
-        let amount = await getETHAmount(rpc, wallet);
-        if (amount == 0) {
-            console.log(`Balance 0 MATIC`);
-            return;
-        }
-        amount = subtract(subtract(amount, generateRandomAmount(50, 150, 0)), multiply(21000, w3.utils.toWei('1000', 'gwei')));
 
-        const tx = {
-            'from': wallet,
-            'gas': 21000,
-            'gasPrice': w3.utils.toWei('1000', 'gwei'),
-            'chainId': w3.eth.getChainId(),
-            'to': toAddress,
-            'nonce': await w3.eth.getTransactionCount(wallet),
-            'value': amount,
-            'data': null
-        };
-        
-        const signedTx = await w3.eth.accounts.signTransaction(tx, privateKey);
-        await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async function(error, hash) {
-            if (!error) {
-                console.log(`Send MATIC: ${chainExplorerTx.Polygon + hash}`);
-            } else {
-                console.log(`Error Tx: ${error}`);
-            }
-        });
-    } catch (err) {
-        console.log(`Function Error: ${err}`);
-    }
+export const numberToHex = (amount) => {
+    const w3 = new Web3();
+    return w3.utils.numberToHex(amount);
 }
-export async function sendTokenFromAvalanche(rpc, tokenAddress, amount, toAddress, privateKey) {
+
+//TX
+export const getETHAmount = async(rpc, walletAddress) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
-    
-    const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
+    const data = await w3.eth.getBalance(walletAddress);
+    return data;
+}
+
+export const getAmountToken = async(rpc, tokenAddress, walletAddress) => {
+    const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
     const token = new w3.eth.Contract(abiToken, w3.utils.toChecksumAddress(tokenAddress));
 
-    const data = await token.methods.transfer(
+    const data = await token.methods.balanceOf(
+        walletAddress
+    ).call();
+
+    return data;
+}
+
+export const checkAllowance = async(rpc, tokenAddress, walletAddress, spender) => {
+    const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
+    const token = new w3.eth.Contract(abiToken, w3.utils.toChecksumAddress(tokenAddress));
+
+    const data = await token.methods.allowance(
+        walletAddress,
+        spender
+    ).call();
+
+    return data;
+}
+
+export const dataApprove = async(rpc, tokenAddress, contractAddress, fromAddress) => {
+    const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
+    const contract = new w3.eth.Contract(abiToken, w3.utils.toChecksumAddress(tokenAddress));
+
+    const data = await contract.methods.approve(
+        contractAddress,
+        chainContract.approveAmount,
+    );
+    const encodeABI = data.encodeABI();
+    const estimateGas = await data.estimateGas({ from: fromAddress });
+
+    return { encodeABI, estimateGas };
+}
+
+export const dataSendToken = async (rpc, tokenAddress, toAddress, amount, fromAddress) => {
+    const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
+    const contract = new w3.eth.Contract(abiToken, w3.utils.toChecksumAddress(tokenAddress));
+
+    const data = await contract.methods.transfer(
         toAddress,
         amount
     );
+    const encodeABI = data.encodeABI();
+    const estimateGas = await data.estimateGas({ from: fromAddress });
 
-    const tx = {
-        'from': wallet,
-        'gas': 333000,
-        'baseFeePerGas': w3.utils.toWei('35', 'gwei'),
-        'maxPriorityFeePerGas': w3.utils.toWei('1.5', 'gwei'),
-        'chainId': w3.eth.getChainId(),
-        'to': tokenAddress,
-        'nonce': await w3.eth.getTransactionCount(wallet),
-        'value': null,
-        'data': data.encodeABI()
-    };
+    return { encodeABI, estimateGas };
+}
+
+export const sendTX = async(rpc, typeTx, gasLimit, gasPrice, maxFee, maxPriorityFee, toAddress, value, data, privateKey) => {
+    const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
+    const fromAddress = privateToAddress(privateKey);
     
-    const signedTx = await w3.eth.accounts.signTransaction(tx, privateKey);
-    await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async function(error, hash) {
+    const tx = {
+        0: {
+            'from': fromAddress,
+            'gas': gasLimit,
+            'gasPrice': gasPrice,
+            'chainId': await w3.eth.getChainId(),
+            'to': toAddress,
+            'nonce': await w3.eth.getTransactionCount(wallet),
+            'value': value,
+            'data': data
+        },
+        2: {
+            'from': fromAddress,
+            'gas': gasLimit,
+            'maxFeePerGas': maxFee,
+            'maxPriorityFeePerGas': maxPriorityFee,
+            'chainId': await w3.eth.getChainId(),
+            'to': toAddress,
+            'nonce': await w3.eth.getTransactionCount(wallet),
+            'value': value,
+            'data': data
+        }
+    };
+
+    const signedTx = await w3.eth.accounts.signTransaction(tx[typeTx], privateKey);
+    await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async(error, hash) => {
         if (!error) {
-            console.log(`Send Token: ${chainExplorerTx.Avalanche + hash}`);
+            const chain = Object.keys(rpc)[Object.values(rpc).findIndex(e => e == rpc)];
+            console.log(`${chain} TX: ${chainExplorerTx[chain] + hash}`);
         } else {
             console.log(`Error Tx: ${error}`);
         }
@@ -168,13 +132,14 @@ export async function sendTokenFromAvalanche(rpc, tokenAddress, amount, toAddres
 }
 
 //APTOS
-export async function getNonceAptos(privateKey) {
+export const getNonceAptos = async(privateKey) => {
     const client = new AptosClient(chainRpc.Aptos);
     const acc = new AptosAccount(Uint8Array.from(Buffer.from(privateKey, 'hex')));
     const nonce = (await client.getAccount(acc.address())).sequence_number;
     return nonce;
 }
-export async function sendTransactionAptos(payload, nonce, gasLimit, privateKey) {
+
+export const sendTransactionAptos = async(payload, nonce, gasLimit, privateKey) => {
     const client = new AptosClient(chainRpc.Aptos);
     const sender = new AptosAccount(Uint8Array.from(Buffer.from(privateKey, 'hex')));
     
@@ -198,7 +163,8 @@ export async function sendTransactionAptos(payload, nonce, gasLimit, privateKey)
         await timeout(2000)
     }
 }
-export async function getBalanceAptos(privateKey) {
+
+export const getBalanceAptos = async(privateKey) => {
     const client = new AptosClient(chainRpc.Aptos);
     const coinClient = new CoinClient(client);
     const account = new AptosAccount(Uint8Array.from(Buffer.from(privateKey, 'hex')));
@@ -215,7 +181,8 @@ export async function getBalanceAptos(privateKey) {
     }
     return -1;
 }
-export async function getBalanceUSDCAptos(privateKey) {
+
+export const getBalanceUSDCAptos = async(privateKey) => {
     const client = new AptosClient(chainRpc.Aptos);
     const coinClient = new CoinClient(client);
     const account = new AptosAccount(Uint8Array.from(Buffer.from(privateKey, 'hex')));
