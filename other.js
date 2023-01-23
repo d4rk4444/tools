@@ -1,9 +1,7 @@
 import Web3 from 'web3';
 import { privateToAptosAddress } from './web3.js';
 import fs from 'fs';
-import * as dotenv from 'dotenv';
 import chalk from 'chalk';
-dotenv.config();
 
 
 export const timeout = ms => new Promise(res => setTimeout(res, ms));

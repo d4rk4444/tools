@@ -5,8 +5,6 @@ import { timeout, generateRandomAmount, rpc, contract, explorerTx } from './othe
 import { abiStargate, abiToken } from './abi.js';
 import { getETHAmount } from './DEX.js';
 import { subtract, multiply, divide } from 'mathjs';
-import * as dotenv from 'dotenv';
-dotenv.config()
 
 //UTILS
 export const privateToAddress = (privateKey) => {
