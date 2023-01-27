@@ -138,18 +138,18 @@ export const sendEVMTX = async(rpc, typeTx, gasLimit, gasPrice, maxFee, maxPrior
             'gasPrice': gasPrice,
             'chainId': await w3.eth.getChainId(),
             'to': toAddress,
-            'nonce': await w3.eth.getTransactionCount(wallet),
+            'nonce': await w3.eth.getTransactionCount(fromAddress),
             'value': value,
             'data': data
         },
         2: {
             'from': fromAddress,
             'gas': gasLimit,
-            'maxFeePerGas': maxFee,
-            'maxPriorityFeePerGas': maxPriorityFee,
+            'maxFeePerGas': w3.utils.toWei(maxFee, 'Gwei'),
+            'maxPriorityFeePerGas': w3.utils.toWei(maxPriorityFee, 'Gwei'),
             'chainId': await w3.eth.getChainId(),
             'to': toAddress,
-            'nonce': await w3.eth.getTransactionCount(wallet),
+            'nonce': await w3.eth.getTransactionCount(fromAddress),
             'value': value,
             'data': data
         }
@@ -159,7 +159,7 @@ export const sendEVMTX = async(rpc, typeTx, gasLimit, gasPrice, maxFee, maxPrior
     await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async(error, hash) => {
         if (!error) {
             const chain = Object.keys(rpc)[Object.values(rpc).findIndex(e => e == rpc)];
-            console.log(`${chain} TX: ${chainExplorerTx[chain] + hash}`);
+            console.log(`${chain} TX: ${explorerTx[chain] + hash}`);
         } else {
             console.log(`Error Tx: ${error}`);
         }
