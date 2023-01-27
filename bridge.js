@@ -33,6 +33,20 @@ export const dataBridgeETHFromStarknet = async(toAddress, amount) => {
     }];
 }
 
+export const dataWithdrawFromBridge = async(amount, toAddress) => {
+    const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
+    const contractSwap = new w3.eth.Contract(abiStarknetBridge, w3.utils.toChecksumAddress(chainContract.Ethereum.StarknetBridge));
+
+    const data = await contractSwap.methods.withdraw(
+        amount,
+        toAddress
+    );
+
+    const encodeABI = data.encodeABI();
+    const estimateGas = await data.estimateGas({ from: toAddress });
+    return { encodeABI, estimateGas };
+}
+
 //LEYERZERO
 export async function lzAdapterParamsToBytes(version, gasAmount, nativeForDst, addressOnDst) {
     const w3 = new Web3();
