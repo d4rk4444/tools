@@ -1,7 +1,9 @@
 import Web3 from 'web3';
 import { ethers } from 'ethers';
 import { subtract, multiply, divide } from 'mathjs';
-import { abiToken, abiTraderJoe, abiBtcBridge, abiBebop } from './abi.js';
+import { chainContract } from './other.js';
+import { abiToken, abiTraderJoe, abiBtcBridge, abiBebop, abiMySwapStarknet} from './abi.js';
+import { Account, Contract, ec, json, stark, Provider, hash, number, uint256 } from 'starknet';
 import * as dotenv from 'dotenv';
 dotenv.config()
 
@@ -25,7 +27,7 @@ export const getAmountsOut = async(rpc, amount, tokenIn, tokenOut, tokenMid, rou
     }
 }
 
-export const swapAvaxToToken = async(rpc, amount, tokenIn, tokenOut, router, fromAddress) => {
+export const dataSwapAvaxToToken = async(rpc, amount, tokenIn, tokenOut, router, fromAddress) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
     const contractSwap = new w3.eth.Contract(abiTraderJoe, w3.utils.toChecksumAddress(router));
 
@@ -42,7 +44,7 @@ export const swapAvaxToToken = async(rpc, amount, tokenIn, tokenOut, router, fro
     return { encodeABI, estimateGas };
 }
 
-export const swapTokenToAvax = async(rpc, amount, tokenIn, tokenOut, router, fromAddress) => {
+export const dataSwapTokenToAvax = async(rpc, amount, tokenIn, tokenOut, router, fromAddress) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
     const contractSwap = new w3.eth.Contract(abiTraderJoe, w3.utils.toChecksumAddress(router));
 
@@ -60,7 +62,7 @@ export const swapTokenToAvax = async(rpc, amount, tokenIn, tokenOut, router, fro
     return { encodeABI, estimateGas };
 }
 
-export const swapTokenToToken = async(rpc, amount, tokenIn, tokenOut, tokenMid, router, fromAddress) => {
+export const dataSwapTokenToToken = async(rpc, amount, tokenIn, tokenOut, tokenMid, router, fromAddress) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
     const contractSwap = new w3.eth.Contract(abiTraderJoe, w3.utils.toChecksumAddress(router));
 
@@ -76,4 +78,161 @@ export const swapTokenToToken = async(rpc, amount, tokenIn, tokenOut, tokenMid, 
     const encodeABI = data.encodeABI();
     const estimateGas = await data.estimateGas({ from: fromAddress });
     return { encodeABI, estimateGas };
+}
+
+//MYSWAP STARKNET
+export const getUSDCAmountStarknet = async(amountETH, slippage) => {
+    const w3 = new Web3();
+    const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
+
+    const contract = new Contract(abiMySwapStarknet, chainContract.Starknet.MySwapRouter, provider);
+    const pool = await contract.get_pool('0x01');
+    const poolETH = w3.utils.hexToNumberString(uint256.bnToUint256(pool[0].token_a_reserves.low).low);
+    const poolUSDC = w3.utils.hexToNumberString(uint256.bnToUint256(pool[0].token_b_reserves.low).low);
+    const price = parseInt( multiply( parseInt( (poolUSDC / 10**6) / (poolETH / 10**18) * 10**6 ) * (amountETH / 10**18), slippage ) );
+
+    return price;
+}
+
+export const getETHAmountStarknet = async(amountUSDC, slippage) => {
+    const w3 = new Web3();
+    const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
+
+    const contract = new Contract(abiMySwapStarknet, chainContract.Starknet.MySwapRouter, provider);
+    const pool = await contract.get_pool('0x01');
+    const poolETH = w3.utils.hexToNumberString(uint256.bnToUint256(pool[0].token_a_reserves.low).low);
+    const poolUSDC = w3.utils.hexToNumberString(uint256.bnToUint256(pool[0].token_b_reserves.low).low);
+    const price = parseInt( multiply( parseInt( (poolETH / 10**18) / (poolUSDC / 10**6) * 10**18 ) * (amountUSDC / 10**6), slippage ) );
+
+    return price;
+}
+
+export const dataSwapEthToUsdc = async(amountETH, slippage) => {
+    const amountUSDC = await getUSDCAmountStarknet(amountETH, slippage);
+
+    const payload = [{
+        contractAddress: chainContract.Starknet.ETH,
+        entrypoint: "approve",
+        calldata: stark.compileCalldata({
+            spender: chainContract.Starknet.MySwapRouter,
+            amount: {type: 'struct', low: amountETH.toString(), high: '0'},
+        })
+    },
+    {
+        contractAddress: chainContract.Starknet.MySwapRouter,
+        entrypoint: "swap",
+        calldata: stark.compileCalldata({
+            pool_id: '0x01',
+            token_from_addr: chainContract.Starknet.ETH,
+            amount_from: {type: 'struct', low: amountETH.toString(), high: '0'},
+            amount_to_min: {type: 'struct', low: amountUSDC.toString(), high: '0'},
+        })
+    }];
+
+    return payload;
+}
+
+export const dataSwapUsdcToEth = async(amountUSDC, slippage) => {
+    const amountETH = await getETHAmountStarknet(amountUSDC, slippage);
+
+    const payload = [{
+        contractAddress: chainContract.Starknet.USDC,
+        entrypoint: "approve",
+        calldata: stark.compileCalldata({
+            spender: chainContract.Starknet.MySwapRouter,
+            amount: {type: 'struct', low: amountUSDC.toString(), high: '0'},
+        })
+    },
+    {
+        contractAddress: chainContract.Starknet.MySwapRouter,
+        entrypoint: "swap",
+        calldata: stark.compileCalldata({
+            pool_id: '0x01',
+            token_from_addr: chainContract.Starknet.USDC,
+            amount_from: {type: 'struct', low: amountUSDC.toString(), high: '0'},
+            amount_to_min: {type: 'struct', low: amountETH.toString(), high: '0'},
+        })
+    }];
+
+    return payload;
+}
+
+export const dataAddLiquidity = async(amountUSDC, slippage) => {
+    const amountETH = await getETHAmountStarknet(amountUSDC, 1);
+    const minAmountETH = parseInt( multiply(amountETH, slippage) );
+    const minAmountUSDC = parseInt( multiply(amountUSDC, slippage) );
+
+    const payload = [{
+        contractAddress: chainContract.Starknet.ETH,
+        entrypoint: "approve",
+        calldata: stark.compileCalldata({
+            spender: chainContract.Starknet.MySwapRouter,
+            amount: {type: 'struct', low: amountETH.toString(), high: '0'},
+        })
+    },
+    {
+        contractAddress: chainContract.Starknet.USDC,
+        entrypoint: "approve",
+        calldata: stark.compileCalldata({
+            spender: chainContract.Starknet.MySwapRouter,
+            amount: {type: 'struct', low: amountUSDC.toString(), high: '0'},
+        })
+    },
+    {
+        contractAddress: chainContract.Starknet.MySwapRouter,
+        entrypoint: "add_liquidity",
+        calldata: stark.compileCalldata({
+            a_address: chainContract.Starknet.ETH,
+            a_amount: {type: 'struct', low: amountETH.toString(), high: '0'},
+            a_min_amount: {type: 'struct', low: minAmountETH.toString(), high: '0'},
+            b_address: chainContract.Starknet.USDC,
+            b_amount: {type: 'struct', low: amountUSDC.toString(), high: '0'},
+            b_min_amount: {type: 'struct', low: minAmountUSDC.toString(), high: '0'},
+        })
+    }];
+
+    return payload;
+}
+
+export const getValueTokensLPMySwap = async(amountLP, slippage) => {
+    const w3 = new Web3();
+    const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
+
+    const contract = new Contract(abiMySwapStarknet, chainContract.Starknet.MySwapRouter, provider);
+    let totalLP = (await contract.get_total_shares('0x01')).total_shares;
+    totalLP = w3.utils.hexToNumberString(uint256.bnToUint256(totalLP.low).low);
+
+    const pool = (await contract.get_pool('0x01')).pool;
+    const totalPool = multiply( w3.utils.hexToNumberString(uint256.bnToUint256(pool.token_b_reserves.low).low), 2);
+    let amountUSDC = parseInt( divide( multiply( divide(totalPool, totalLP), amountLP), 2 ) );
+
+    const amountETH = await getETHAmountStarknet(amountUSDC, slippage);
+    amountUSDC = parseInt( multiply(amountUSDC, slippage) );
+
+    return { amountETH, amountUSDC };
+}
+
+export const dataDeleteLiquidity = async(amountLP, slippage) => {
+    const valueLP = await getValueTokensLPMySwap(amountLP, slippage);
+
+    const payload = [{
+        contractAddress: chainContract.Starknet.ETHUSDCLP,
+        entrypoint: "approve",
+        calldata: stark.compileCalldata({
+            spender: chainContract.Starknet.MySwapRouter,
+            amount: {type: 'struct', low: amountLP.toString(), high: '0'},
+        })
+    },
+    {
+        contractAddress: chainContract.Starknet.MySwapRouter,
+        entrypoint: "withdraw_liquidity",
+        calldata: stark.compileCalldata({
+            pool_id: '0x01',
+            shares_amount: {type: 'struct', low: amountLP.toString(), high: '0'},
+            amount_min_a: {type: 'struct', low: valueLP.amountETH.toString(), high: '0'},
+            amount_min_b: {type: 'struct', low: valueLP.amountUSDC.toString(), high: '0'},
+        })
+    }];
+
+    return payload;
 }

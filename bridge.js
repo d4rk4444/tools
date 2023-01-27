@@ -2,12 +2,38 @@ import Web3 from 'web3';
 import { ethers } from 'ethers';
 import { AptosClient, AptosAccount, CoinClient } from "aptos";
 import { subtract, multiply, divide } from 'mathjs';
-import { abiToken, abiTraderJoe, abiBtcBridge, abiBebop, abiStargate, abiAptosBridge } from './abi.js';
+import { abiToken, abiTraderJoe, abiBtcBridge, abiBebop, abiStargate, abiAptosBridge, abiStarknetBridge } from './abi.js';
 import { getNonceAptos, privateToAddress, sendTransactionAptos, toWei } from './web3.js';
-import { chainRpc, chainContract, chainExplorerTx } from './other.js';
+import { rpc, chainContract, explorerTx } from './other.js';
 import * as dotenv from 'dotenv';
 dotenv.config()
 
+//STARKNET
+export const dataBridgeETHToStarknet = async(rpc, toStarknetAddress, fromAddress) => {
+    const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
+    const contractSwap = new w3.eth.Contract(abiStarknetBridge, w3.utils.toChecksumAddress(chainContract.Ethereum.StarknetBridge));
+
+    const data = await contractSwap.methods.deposit(
+        w3.utils.hexToNumberString(toStarknetAddress)
+    );
+
+    const encodeABI = data.encodeABI();
+    const estimateGas = await data.estimateGas({ from: fromAddress });
+    return { encodeABI, estimateGas };
+}
+
+export const dataBridgeETHFromStarknet = async(toAddress, amount) => {
+    return [{
+        contractAddress: chainContract.Starknet.StargateBridge,
+        entrypoint: "initiate_withdraw",
+        calldata: stark.compileCalldata({
+            l1_recipient: toAddress,
+            amount: {type: 'struct', low: amount.toString(), high: '0'}
+        })
+    }];
+}
+
+//LEYERZERO
 export async function lzAdapterParamsToBytes(version, gasAmount, nativeForDst, addressOnDst) {
     const w3 = new Web3();
     const adapterParamsBytes = ethers.utils.solidityPack(['uint16','uint256','uint256','address'],
