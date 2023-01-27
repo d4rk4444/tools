@@ -253,6 +253,16 @@ export const sendTransactionStarknet = async(payload, privateKey) => {
     }
 }
 
+export const estimateInvokeMaxFee = async(payload, privateKey) => {
+    const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
+    const starkKeyPair = ec.getKeyPair(privateKey);
+    const address = await privateToStarknetAddress(privateKey);
+    const account = new Account(provider, address, starkKeyPair);
+
+    const res = await account.estimateInvokeFee(payload);
+    return number.hexToDecimalString(uint256.bnToUint256(res.suggestedMaxFee).low);
+}
+
 export const getAmountTokenStark = async(walletAddress, tokenAddress, abiAddress) => {
     const w3 = new Web3();
     const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });

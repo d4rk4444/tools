@@ -2,6 +2,7 @@ import Web3 from 'web3';
 import { ethers } from 'ethers';
 import { AptosClient, AptosAccount, CoinClient } from "aptos";
 import { subtract, multiply, divide } from 'mathjs';
+import { Account, Contract, ec, json, stark, Provider, hash, number, uint256 } from 'starknet';
 import { abiToken, abiTraderJoe, abiBtcBridge, abiBebop, abiStargate, abiAptosBridge, abiStarknetBridge } from './abi.js';
 import { getNonceAptos, privateToAddress, sendTransactionAptos, toWei } from './web3.js';
 import { rpc, chainContract, explorerTx } from './other.js';
