@@ -127,8 +127,8 @@ export const getGasPriceEthereum = async() => {
         } catch (err) {};
 }
 
-export const sendEVMTX = async(rpc, typeTx, gasLimit, gasPrice, maxFee, maxPriorityFee, toAddress, value, data, privateKey) => {
-    const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
+export const sendEVMTX = async(rpcProvider, typeTx, gasLimit, gasPrice, maxFee, maxPriorityFee, toAddress, value, data, privateKey) => {
+    const w3 = new Web3(new Web3.providers.HttpProvider(rpcProvider));
     const fromAddress = privateToAddress(privateKey);
     
     const tx = {
@@ -158,7 +158,7 @@ export const sendEVMTX = async(rpc, typeTx, gasLimit, gasPrice, maxFee, maxPrior
     const signedTx = await w3.eth.accounts.signTransaction(tx[typeTx], privateKey);
     await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async(error, hash) => {
         if (!error) {
-            const chain = Object.keys(rpc)[Object.values(rpc).findIndex(e => e == rpc)];
+            const chain = Object.keys(rpc)[Object.values(rpc).findIndex(e => e == rpcProvider)];
             console.log(`${chain} TX: ${explorerTx[chain] + hash}`);
         } else {
             console.log(`Error Tx: ${error}`);
