@@ -34,7 +34,7 @@ export const dataBridgeETHFromStarknet = async(toAddress, amount) => {
     }];
 }
 
-export const dataWithdrawFromBridge = async(amount, toAddress) => {
+export const dataWithdrawFromBridge = async(rpc, amount, toAddress) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
     const contractSwap = new w3.eth.Contract(abiStarknetBridge, w3.utils.toChecksumAddress(chainContract.Ethereum.StarknetBridge));
 
