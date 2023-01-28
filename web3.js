@@ -237,6 +237,44 @@ export const getBalanceUSDCAptos = async(privateKey) => {
 }
 
 //STARKNET
+export const deployStarknetWallet = async(privateKeyStarknet) => {
+    // connect provider
+    const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
+
+    //new Argent X account v0.2.3 :
+    const argentXproxyClassHash = "0x25ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918";
+    const argentXaccountClassHash = "0x033434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2";
+
+    // Generate public and private key pair.
+    const starkKeyPairAX = ec.getKeyPair(privateKeyStarknet);
+    const starkKeyPubAX = ec.getStarkKey(starkKeyPairAX);
+
+    // Calculate future address of the ArgentX account
+    const AXproxyConstructorCallData = stark.compileCalldata({
+        implementation: argentXaccountClassHash,
+        selector: hash.getSelectorFromName("initialize"),
+        calldata: stark.compileCalldata({ signer: starkKeyPubAX, guardian: "0" }),
+    });
+    const AXcontractAddress = hash.calculateContractAddressFromHash(
+        starkKeyPubAX,
+        argentXproxyClassHash,
+        AXproxyConstructorCallData,
+        0
+    );
+
+    const accountAX = new Account(provider, AXcontractAddress, starkKeyPairAX);
+
+    const deployAccountPayload = {
+        classHash: argentXproxyClassHash,
+        constructorCalldata: AXproxyConstructorCallData,
+        contractAddress: AXcontractAddress,
+        addressSalt: starkKeyPubAX };
+
+    const { transaction_hash: AXdAth, contract_address: AXcontractFinalAdress } = await accountAX.deployAccount(deployAccountPayload);
+    console.log(`✅ ArgentX wallet deployed at: ${AXcontractFinalAdress}`);
+    console.log(`Transaction Hash: ${explorerTx.Starknet + AXdAth}`);
+}
+
 export const sendTransactionStarknet = async(payload, privateKey) => {
     const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
     const starkKeyPair = ec.getKeyPair(privateKey);
