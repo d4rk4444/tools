@@ -109,24 +109,30 @@ export const chainContract = {
     },
     BSC: {
         leyer0ChainId: 102,
+        USDTID: 2,
         WBNB: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
         USDC: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
         BUSD: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
+        USDT: '0x55d398326f99059fF775485246999027B3197955',
+        StargateRouter: '0x4a364f8c717cAAD9A442737Eb7b8A55cc6cf18D8',
     },
     Polygon: {
         leyer0ChainId: 109,
+        USDCID: 1,
         USDC: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
         StargateRouter: '0x45a01e4e04f14f7a4a6702c74187c5f6222033cd',
         AptosRouter: '0x488863d609f3a673875a914fbee7508a1de45ec6'
     },
     Avalanche: {
         leyer0ChainId: 106,
+        USDCID: 1,
         WAVAX: '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7',
         BTCB: '0x152b9d0fdc40c096757f570a51e494bd4b943e50',
         USDC: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
         STG: '0x2F6F07CDcf3588944Bf4C42aC74ff24bF56e7590',
         veSTG: '0xCa0F57D295bbcE554DA2c07b005b7d6565a58fCE',
-        traderJoe: '0xe3ffc583dc176575eea7fd9df2a7c65f7e23f4c3',
+        TraderJoe: '0xe3ffc583dc176575eea7fd9df2a7c65f7e23f4c3',
+        JoeOracle: '0x60aE616a2155Ee3d9A68541Ba4544862310933d4',
         BTCbRouter: '0x2297aebd383787a160dd0d9f71508148769342e3',
         StargateRouter: '0x45A01E4e04F14f7A4a6702c74187c5F6222033cd',
         AptosRouter: '0xa5972eee0c9b5bbb89a5b16d1d65f94c9ef25166'

@@ -1,11 +1,10 @@
 import Web3 from 'web3';
 import { ethers } from 'ethers';
-import { AptosClient, AptosAccount, CoinClient } from "aptos";
 import { subtract, multiply, divide } from 'mathjs';
 import { Account, Contract, ec, json, stark, Provider, hash, number, uint256 } from 'starknet';
 import { abiToken, abiTraderJoe, abiBtcBridge, abiBebop, abiStargate, abiAptosBridge, abiStarknetBridge } from './abi.js';
 import { getNonceAptos, privateToAddress, sendTransactionAptos, toWei } from './web3.js';
-import { rpc, chainContract, explorerTx } from './other.js';
+import { chainContract } from './other.js';
 import * as dotenv from 'dotenv';
 dotenv.config()
 
@@ -49,20 +48,21 @@ export const dataWithdrawFromBridge = async(rpc, amount, toAddress) => {
 }
 
 //LEYERZERO
-export async function lzAdapterParamsToBytes(version, gasAmount, nativeForDst, addressOnDst) {
+export const lzAdapterParamsToBytes = async(version, gasAmount, nativeForDst, addressOnDst) => {
     const w3 = new Web3();
-    const adapterParamsBytes = ethers.utils.solidityPack(['uint16','uint256','uint256','address'],
-    [version, gasAmount, w3.utils.toHex(Number(nativeForDst)), addressOnDst]);
+    const adapterParamsBytes = ethers.utils.solidityPack(
+        ['uint16','uint256','uint256','address'],
+        [version, gasAmount, w3.utils.numberToHex(nativeForDst), addressOnDst]
+    );
 
     return adapterParamsBytes;
 }
 
-export async function feeBridgeBtc(rpc, toChainId, routerAddress, versionLZ, gasAmountLZ, nativeForDstLZ, privateKey) {
+export const feeBridgeBTC = async(rpc, toChainId, routerAddress, versionLZ, gasAmountLZ, nativeForDstLZ, fromAddress) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
     
-    const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
     const bridge = new w3.eth.Contract(abiBtcBridge, w3.utils.toChecksumAddress(routerAddress));
-    const wallet32bytes = ethers.utils.hexZeroPad(wallet, 32);
+    const wallet32bytes = ethers.utils.hexZeroPad(fromAddress, 32);
 
     const data = await bridge.methods.estimateSendAndCallFee(
         toChainId,
@@ -71,206 +71,127 @@ export async function feeBridgeBtc(rpc, toChainId, routerAddress, versionLZ, gas
         '0x',
         500000,
         false,
-        await lzAdapterParamsToBytes(versionLZ, gasAmountLZ, w3.utils.toHex(nativeForDstLZ), wallet)
+        await lzAdapterParamsToBytes(versionLZ, gasAmountLZ, w3.utils.numberToHex(nativeForDstLZ), fromAddress)
     ).call();
 
     return data.nativeFee;
 }
 
-export async function bridgeBtcFromAvalancheToArbitrum(rpc, amount, adapterParams, valueForTx, privateKey) {
+export const dataBridgeBTCAvaxToArbitrum = async(rpc, amount, adapterParams, valueTx, fromAddress) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
     
-    const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
     const router = '0x2297aebd383787a160dd0d9f71508148769342e3';
     const bridge = new w3.eth.Contract(abiBtcBridge, w3.utils.toChecksumAddress(router));
-    const wallet32bytes = ethers.utils.hexZeroPad(wallet, 32);
+    const wallet32bytes = ethers.utils.hexZeroPad(fromAddress, 32);
 
     const data = await bridge.methods.sendFrom(
-        wallet,
+        fromAddress,
         110,
         wallet32bytes,
         amount,
         amount,
-        [wallet, '0x0000000000000000000000000000000000000000', adapterParams]
+        [fromAddress, '0x0000000000000000000000000000000000000000', adapterParams]
     );
-
-    const tx = {
-        'from': wallet,
-        'gas': 250000,
-        'baseFeePerGas': w3.utils.toWei('35', 'gwei'),
-        'maxPriorityFeePerGas': w3.utils.toWei('1.5', 'gwei'),
-        'chainId': w3.eth.getChainId(),
-        'to': router,
-        'nonce': await w3.eth.getTransactionCount(wallet),
-        'value': valueForTx,
-        'data': data.encodeABI()
-    };
     
-    const signedTx = await w3.eth.accounts.signTransaction(tx, privateKey);
-    await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async function(error, hash) {
-        if (!error) {
-            console.log(`Bridge BTC.b to Arbitrum: ${chainExplorerTx.Avalanche + hash}`);
-        } else {
-            console.log(`Error Tx: ${error}`);
-        }
-    });
+    const encodeABI = data.encodeABI();
+    const estimateGas = await data.estimateGas({ from: fromAddress, value: valueTx });
+    return { encodeABI, estimateGas };
 }
 
-export async function bridgeBtcFromArbitrumToAvalanche(rpc, amount, adapterParams, valueForTx, privateKey) {
+export const dataBridgeBTCArbitrumToAvax = async(rpc, amount, adapterParams, valueTx, fromAddress) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
     
-    const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
     const router = '0x2297aEbD383787A160DD0d9F71508148769342E3';
     const bridge = new w3.eth.Contract(abiBtcBridge, w3.utils.toChecksumAddress(router));
-    const wallet32bytes = ethers.utils.hexZeroPad(wallet, 32);
+    const wallet32bytes = ethers.utils.hexZeroPad(fromAddress, 32);
 
     const data = await bridge.methods.sendFrom(
-        wallet,
+        fromAddress,
         106,
         wallet32bytes,
         amount,
         amount,
-        [wallet, '0x0000000000000000000000000000000000000000', adapterParams]
+        [fromAddress, '0x0000000000000000000000000000000000000000', adapterParams]
     );
 
-    const tx = {
-        'from': wallet,
-        'gas': 1200000,
-        'baseFeePerGas': w3.utils.toWei('0.1', 'gwei'),
-        'chainId': w3.eth.getChainId(),
-        'to': router,
-        'nonce': await w3.eth.getTransactionCount(wallet),
-        'value': valueForTx,
-        'data': data.encodeABI()
-    };
-    
-    const signedTx = await w3.eth.accounts.signTransaction(tx, privateKey);
-    await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async function(error, hash) {
-        if (!error) {
-            console.log(`Bridge BTC.b to Avalanche-C: ${chainExplorerTx.Arbitrum + hash}`);
-        } else {
-            console.log(`Error Tx: ${error}`);
-        }
-    });
+    const encodeABI = data.encodeABI();
+    const estimateGas = await data.estimateGas({ from: fromAddress, value: valueTx });
+    return { encodeABI, estimateGas };
 }
 
-export async function feeBridgeStargate(rpc, toChainId, routerAddress, gasAmountLZ, nativeForDstLZ, privateKey) {
+export const feeBridgeStargate = async(rpc, toChainId, routerAddress, gasAmountLZ, nativeForDstLZ, fromAddress) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
     
-    const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
     const bridge = new w3.eth.Contract(abiStargate, w3.utils.toChecksumAddress(routerAddress));
 
     const data = await bridge.methods.quoteLayerZeroFee(
         toChainId,
         1,
-        wallet,
+        fromAddress,
         '0x',
-        [gasAmountLZ, w3.utils.toHex(nativeForDstLZ), wallet]
+        [gasAmountLZ, w3.utils.toHex(nativeForDstLZ), fromAddress]
     ).call();
 
     return data.nativeFee;
 }
 
-export async function bridgeUSDCFromAvalancheToPolygonStargate(rpc, amountMwei, gasAmountLZ, nativeForDstLZ, valueForTx, privateKey) {
+export const dataStargateBridgeAvaxToOther = async(rpc, toChainId, srcPoolId, dstPoolId, amountMwei, gasAmountLZ, nativeForDstLZ, valueTx, router, fromAddress) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
-    
-    const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
-    const router = '0x45a01e4e04f14f7a4a6702c74187c5f6222033cd';
     const bridge = new w3.eth.Contract(abiStargate, w3.utils.toChecksumAddress(router));
 
     const data = await bridge.methods.swap(
-        109,
-        1,
-        1,
-        wallet,
+        toChainId,
+        srcPoolId,
+        dstPoolId,
+        fromAddress,
         amountMwei,
-        w3.utils.toBN(parseInt(multiply(amountMwei, 0.995))),
-        [gasAmountLZ, nativeForDstLZ, wallet],
-        wallet,
+        w3.utils.numberToHex(parseInt(multiply(amountMwei, 0.995))),
+        [gasAmountLZ, w3.utils.numberToHex(nativeForDstLZ), fromAddress],
+        fromAddress,
         '0x'
     );
 
-    const tx = {
-        'from': wallet,
-        'gas': 750000,
-        'baseFeePerGas': w3.utils.toWei('35', 'gwei'),
-        'maxPriorityFeePerGas': w3.utils.toWei('1.5', 'gwei'),
-        'chainId': w3.eth.getChainId(),
-        'to': router,
-        'nonce': await w3.eth.getTransactionCount(wallet),
-        'value': valueForTx,
-        'data': data.encodeABI()
-    };
-    
-    const signedTx = await w3.eth.accounts.signTransaction(tx, privateKey);
-    await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async function(error, hash) {
-        if (!error) {
-            console.log(`Bridge USDC to Polygon: ${chainExplorerTx.Avalanche + hash}`);
-        } else {
-            console.log(`Error Tx: ${error}`);
-        }
-    });
+    const encodeABI = data.encodeABI();
+    const estimateGas = await data.estimateGas({ from: fromAddress, value: valueTx });
+    return { encodeABI, estimateGas };
 }
 
-export async function bridgeUSDCFromPolygonToAvalancheStargate(rpc, amountMwei, gasAmountLZ, nativeForDstLZ, valueForTx, privateKey) {
+export const dataStargateBridgeOtherToAvax = async(rpc, srcPoolId, dstPoolId, amountMwei, gasAmountLZ, nativeForDstLZ, valueTx, router, fromAddress) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
-    
-    const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
-    const router = '0x45a01e4e04f14f7a4a6702c74187c5f6222033cd';
     const bridge = new w3.eth.Contract(abiStargate, w3.utils.toChecksumAddress(router));
 
     const data = await bridge.methods.swap(
-        106,
-        1,
-        1,
-        wallet,
+        chainContract.Avalanche.leyer0ChainId,
+        srcPoolId,
+        dstPoolId,
+        fromAddress,
         amountMwei,
         w3.utils.toBN(parseInt(multiply(amountMwei, 0.99))),
-        [gasAmountLZ, nativeForDstLZ, wallet],
-        wallet,
+        [gasAmountLZ, w3.utils.numberToHex(nativeForDstLZ), fromAddress],
+        fromAddress,
         '0x'
     );
 
-    const tx = {
-        'from': wallet,
-        'gas': 500000,
-        'maxFeePerGas': w3.utils.toWei('150', 'gwei'),
-        'maxPriorityFeePerGas': w3.utils.toWei('30', 'gwei'),
-        'chainId': w3.eth.getChainId(),
-        'to': router,
-        'nonce': await w3.eth.getTransactionCount(wallet),
-        'value': valueForTx,
-        'data': data.encodeABI()
-    };
-    
-    const signedTx = await w3.eth.accounts.signTransaction(tx, privateKey);
-    await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async function(error, hash) {
-        if (!error) {
-            console.log(`Bridge USDC to Avalanche: ${chainExplorerTx.Polygon + hash}`);
-        } else {
-            console.log(`Error Tx: ${error}`);
-        }
-    });
+    const encodeABI = data.encodeABI();
+    const estimateGas = await data.estimateGas({ from: fromAddress, value: valueTx });
+    return { encodeABI, estimateGas };
 }
 
-export async function feeBridgeToAptos(rpc, routerAddress, versionLZ, gasAmountLZ, nativeForDstLZ, privateKey) {
+export const feeBridgeAptos = async(rpc, routerAddress, versionLZ, gasAmountLZ, nativeForDstLZ, fromAddress) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
     
-    const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
     const bridge = new w3.eth.Contract(abiAptosBridge, w3.utils.toChecksumAddress(routerAddress));
-
     const data = await bridge.methods.quoteForSend(
-        [wallet, '0x0000000000000000000000000000000000000000'],
-        await lzAdapterParamsToBytes(versionLZ, gasAmountLZ, w3.utils.toHex(nativeForDstLZ), wallet)
+        [fromAddress, '0x0000000000000000000000000000000000000000'],
+        await lzAdapterParamsToBytes(versionLZ, gasAmountLZ, w3.utils.toHex(nativeForDstLZ), fromAddress)
     ).call();
 
     return data.nativeFee;
 }
 
-export async function bridgeUSDCFromAvalancheToAptos(rpc, amountMwei, toAddress, adapterParams, valueForTx, privateKey) {
+export const dataBridgeUSDCAvaxToAptos = async(rpc, amountMwei, toAddress, adapterParams, valueTx, fromAddress) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
     
-    const wallet = w3.eth.accounts.privateKeyToAccount(privateKey).address;
     const router = chainContract.Avalanche.AptosRouter;
     const bridge = new w3.eth.Contract(abiAptosBridge, w3.utils.toChecksumAddress(router));
 
@@ -278,33 +199,27 @@ export async function bridgeUSDCFromAvalancheToAptos(rpc, amountMwei, toAddress,
         chainContract.Avalanche.USDC,
         toAddress,
         amountMwei,
-        [wallet, '0x0000000000000000000000000000000000000000'],
+        [fromAddress, '0x0000000000000000000000000000000000000000'],
         adapterParams
     );
 
-    const tx = {
-        'from': wallet,
-        'gas': 350000,
-        'baseFeePerGas': w3.utils.toWei('35', 'gwei'),
-        'maxPriorityFeePerGas': w3.utils.toWei('1.5', 'gwei'),
-        'chainId': w3.eth.getChainId(),
-        'to': router,
-        'nonce': await w3.eth.getTransactionCount(wallet),
-        'value': valueForTx,
-        'data': data.encodeABI()
-    };
-    
-    const signedTx = await w3.eth.accounts.signTransaction(tx, privateKey);
-    await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async function(error, hash) {
-        if (!error) {
-            console.log(`Bridge USDC from Avalanche to Aptos: ${chainExplorerTx.Avalanche + hash}`);
-        } else {
-            console.log(`Error Tx: ${error}`);
-        }
-    });
+    const encodeABI = data.encodeABI();
+    const estimateGas = await data.estimateGas({ from: fromAddress, value: valueTx });
+    return { encodeABI, estimateGas };
 }
 
-export async function bridgeUSDCFromAptosToAvalanche(amountMwei, toAddress, privateKey) {
+export const claimUSDCAptos = async(privateKey) => {
+    return await sendTransactionAptos({
+        "function": "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::coin_bridge::claim_coin",
+        "type_arguments": [
+          "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC"
+        ],
+        "arguments": [],
+        "type": "entry_function_payload"
+    }, await getNonceAptos(privateKey), 2200, privateKey);
+}
+
+export const bridgeUSDCAptosToAvax = async(amountMwei, toAddress, privateKey) => {
     const w3 = new Web3();
     return await sendTransactionAptos({
         "function": "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::coin_bridge::send_coin_from",
@@ -325,19 +240,8 @@ export async function bridgeUSDCFromAptosToAvalanche(amountMwei, toAddress, priv
     }, await getNonceAptos(privateKey), 12000, privateKey);
 }
 
-export async function claimUSDCAptos(privateKey) {
-    return await sendTransactionAptos({
-        "function": "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::coin_bridge::claim_coin",
-        "type_arguments": [
-          "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC"
-        ],
-        "arguments": [],
-        "type": "entry_function_payload"
-    }, await getNonceAptos(privateKey), 2200, privateKey);
-}
-
 //CONSENSYS
-export async function bridgeETHFromGoerliToConsensys(rpc, privateKey) {
+export const bridgeETHFromGoerliToConsensys = async(rpc, privateKey) => {
         const w3 = new Web3(new Web3.providers.HttpProvider(rpc));
         const wallet = privateToAddress(privateKey);
 
@@ -354,7 +258,6 @@ export async function bridgeETHFromGoerliToConsensys(rpc, privateKey) {
         };
         
         const signedTx = await w3.eth.accounts.signTransaction(tx, privateKey);
-
         await w3.eth.sendSignedTransaction(signedTx.rawTransaction, async function(error, hash) {
             if (!error) {
                 console.log(`Bridge ETH to ConsenSys zkEVM: ${chainExplorerTx.Goerli + hash}`);

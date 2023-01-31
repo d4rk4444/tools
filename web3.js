@@ -121,7 +121,7 @@ export const getGasPriceEthereum = async() => {
         try {
             const res = await axios.get('https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=FC2TA4DAG1XVSPM58GIPVW42V2YH7GGTK5');
             const maxFee = res.data.result.FastGasPrice;
-            const maxPriorityFee = res.data.result.gasUsedRatio.split(',')[2];
+            const maxPriorityFee = parseFloat(res.data.result.gasUsedRatio.split(',')[2]).toFixed(3);
 
             return { maxFee, maxPriorityFee };
         } catch (err) {};

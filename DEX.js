@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import { ethers } from 'ethers';
 import { subtract, multiply, divide } from 'mathjs';
-import { chainContract } from './other.js';
+import { rpc, chainContract } from './other.js';
 import { abiToken, abiTraderJoe, abiBtcBridge, abiBebop, abiMySwapStarknet} from './abi.js';
 import { Account, Contract, ec, json, stark, Provider, hash, number, uint256 } from 'starknet';
 import * as dotenv from 'dotenv';
@@ -32,7 +32,7 @@ export const dataSwapAvaxToToken = async(rpc, amount, tokenIn, tokenOut, router,
     const contractSwap = new w3.eth.Contract(abiTraderJoe, w3.utils.toChecksumAddress(router));
 
     const data = await contractSwap.methods.swapExactAVAXForTokens(
-        w3.utils.toBN(parseInt(multiply(await amountOut(rpc, amount, tokenIn, tokenOut), '0.985'))),
+        w3.utils.numberToHex(parseInt(multiply(await getAmountsOut(rpc, amount, tokenIn, tokenOut, null, chainContract.Avalanche.JoeOracle), '0.985'))),
         [0],
         [tokenIn, tokenOut],
         fromAddress,
@@ -40,7 +40,7 @@ export const dataSwapAvaxToToken = async(rpc, amount, tokenIn, tokenOut, router,
     );
 
     const encodeABI = data.encodeABI();
-    const estimateGas = await data.estimateGas({ from: fromAddress });
+    const estimateGas = await data.estimateGas({ from: fromAddress, value: amount });
     return { encodeABI, estimateGas };
 }
 
@@ -50,7 +50,7 @@ export const dataSwapTokenToAvax = async(rpc, amount, tokenIn, tokenOut, router,
 
     const data = await contractSwap.methods.swapExactTokensForAVAX(
         w3.utils.numberToHex(amount),
-        w3.utils.toBN(parseInt(multiply(await amountOut(rpc, amount, tokenIn, tokenOut), '0.995'))),
+        w3.utils.toBN(parseInt(multiply(await getAmountsOut(rpc, amount, tokenIn, tokenOut, null, chainContract.Avalanche.JoeOracle), '0.995'))),
         [0],
         [tokenIn, tokenOut],
         fromAddress,
@@ -58,7 +58,7 @@ export const dataSwapTokenToAvax = async(rpc, amount, tokenIn, tokenOut, router,
     );
 
     const encodeABI = data.encodeABI();
-    const estimateGas = await data.estimateGas({ from: fromAddress });
+    const estimateGas = await data.estimateGas({ from: fromAddress, amount: null });
     return { encodeABI, estimateGas };
 }
 
@@ -68,7 +68,7 @@ export const dataSwapTokenToToken = async(rpc, amount, tokenIn, tokenOut, tokenM
 
     const data = await contractSwap.methods.swapExactTokensForTokens(
         amount,
-        w3.utils.toBN(parseInt(multiply(await amountOut(rpc, amount, tokenIn, tokenOut, tokenMid), '0.985'))),
+        w3.utils.toBN(parseInt(multiply(await getAmountsOut(rpc, amount, tokenIn, tokenOut, tokenMid, chainContract.Avalanche.JoeOracle), '0.985'))),
         [0, 0],
         [tokenIn, tokenMid, tokenOut],
         fromAddress,
@@ -76,7 +76,7 @@ export const dataSwapTokenToToken = async(rpc, amount, tokenIn, tokenOut, tokenM
     );
 
     const encodeABI = data.encodeABI();
-    const estimateGas = await data.estimateGas({ from: fromAddress });
+    const estimateGas = await data.estimateGas({ from: fromAddress, amount: null });
     return { encodeABI, estimateGas };
 }
 
