@@ -14,6 +14,7 @@ export const privateToAddress = (privateKey) => {
 }
 
 export const privateToAptosAddress = (privateKey) => {
+    if (privateKey.startsWith('0x')) privateKey = privateKey.slice(2);
     const mainAccount = new AptosAccount(Uint8Array.from(Buffer.from(privateKey, 'hex')));
     return mainAccount.accountAddress.hexString;
 }
@@ -135,7 +136,7 @@ export const sendEVMTX = async(rpcProvider, typeTx, gasLimit, gasPrice, maxFee, 
         0: {
             'from': fromAddress,
             'gas': gasLimit,
-            'gasPrice': gasPrice,
+            'gasPrice': w3.utils.toWei(gasPrice, 'Gwei'),
             'chainId': await w3.eth.getChainId(),
             'to': toAddress,
             'nonce': await w3.eth.getTransactionCount(fromAddress),
@@ -168,14 +169,15 @@ export const sendEVMTX = async(rpcProvider, typeTx, gasLimit, gasPrice, maxFee, 
 
 //APTOS
 export const getNonceAptos = async(privateKey) => {
-    const client = new AptosClient(chainRpc.Aptos);
-    const acc = new AptosAccount(Uint8Array.from(Buffer.from(privateKey, 'hex')));
-    const nonce = (await client.getAccount(acc.address())).sequence_number;
+    const client = new AptosClient(rpc.Aptos);
+    const address = privateToAptosAddress(privateKey);
+    const nonce = (await client.getAccount(address)).sequence_number;
     return nonce;
 }
 
 export const sendTransactionAptos = async(payload, nonce, gasLimit, privateKey) => {
-    const client = new AptosClient(chainRpc.Aptos);
+    if (privateKey.startsWith('0x')) privateKey = privateKey.slice(2);
+    const client = new AptosClient(rpc.Aptos);
     const sender = new AptosAccount(Uint8Array.from(Buffer.from(privateKey, 'hex')));
     
     try {
@@ -188,8 +190,8 @@ export const sendTransactionAptos = async(payload, nonce, gasLimit, privateKey) 
         const signedTxn = await client.signTransaction(sender, txnRequest);
         const transactionRes = await client.submitTransaction(signedTxn);
 
-        await client.waitForTransactionWithResult(transactionRes.hash, { checkSuccess: true }).then(async function(hash) {
-            console.log(`Send TX in Aptos: ${chainExplorerTx.Aptos + hash.hash}`)
+        await client.waitForTransactionWithResult(transactionRes.hash, { checkSuccess: true }).then(async(hash) => {
+            console.log(`Send TX in Aptos: ${explorerTx.Aptos + hash.hash}`)
         });
     } catch (err) {
         try {
@@ -200,7 +202,8 @@ export const sendTransactionAptos = async(payload, nonce, gasLimit, privateKey) 
 }
 
 export const getBalanceAptos = async(privateKey) => {
-    const client = new AptosClient(chainRpc.Aptos);
+    if (privateKey.startsWith('0x')) privateKey = privateKey.slice(2);
+    const client = new AptosClient(rpc.Aptos);
     const coinClient = new CoinClient(client);
     const account = new AptosAccount(Uint8Array.from(Buffer.from(privateKey, 'hex')));
     try {
@@ -218,7 +221,8 @@ export const getBalanceAptos = async(privateKey) => {
 }
 
 export const getBalanceUSDCAptos = async(privateKey) => {
-    const client = new AptosClient(chainRpc.Aptos);
+    if (privateKey.startsWith('0x')) privateKey = privateKey.slice(2);
+    const client = new AptosClient(rpc.Aptos);
     const coinClient = new CoinClient(client);
     const account = new AptosAccount(Uint8Array.from(Buffer.from(privateKey, 'hex')));
     try {

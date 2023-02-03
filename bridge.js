@@ -129,7 +129,7 @@ export const feeBridgeStargate = async(rpc, toChainId, routerAddress, gasAmountL
         1,
         fromAddress,
         '0x',
-        [gasAmountLZ, w3.utils.toHex(nativeForDstLZ), fromAddress]
+        [gasAmountLZ, w3.utils.numberToHex(nativeForDstLZ), fromAddress]
     ).call();
 
     return data.nativeFee;
