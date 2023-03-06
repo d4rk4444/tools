@@ -128,6 +128,13 @@ export const getGasPriceEthereum = async() => {
         } catch (err) {};
 }
 
+export const getGasPrice = async(rpcProvider) => {
+    const w3 = new Web3(new Web3.providers.HttpProvider(rpcProvider));
+    const gasPrice = await w3.eth.getGasPrice();
+    const gasPriceInGwei = w3.utils.fromWei(gasPrice, 'Gwei');
+    return gasPriceInGwei;
+}
+
 export const sendEVMTX = async(rpcProvider, typeTx, gasLimit, gasPrice, maxFee, maxPriorityFee, toAddress, value, data, privateKey) => {
     const w3 = new Web3(new Web3.providers.HttpProvider(rpcProvider));
     const fromAddress = privateToAddress(privateKey);

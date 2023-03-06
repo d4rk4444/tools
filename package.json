@@ -1,6 +1,6 @@
 {
   "name": "tools-d4rk444",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "",
   "main": "index.js",
   "type": "module",
@@ -22,7 +22,7 @@
     "node-binance-api": "^0.13.1",
     "readline-sync": "^1.4.10",
     "starknet": "^4.17.1",
-    "web3": "^1.8.1"
+    "web3": "^1.8.2"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
