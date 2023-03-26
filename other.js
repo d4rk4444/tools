@@ -23,7 +23,7 @@ export const shuffle = (array) => {
 }
 
 export const generateRandomAmount = (min, max, num) => {
-    const amount = Number(Math.random() * (max - min) + min);
+    const amount = Number(Math.random() * (parseFloat(max) - parseFloat(min)) + parseFloat(min));
     return Number(parseFloat(amount).toFixed(num));
 }
 
