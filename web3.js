@@ -312,7 +312,7 @@ export const estimateInvokeMaxFee = async(payload, privateKey) => {
     return number.hexToDecimalString(uint256.bnToUint256(res.suggestedMaxFee).low);
 }
 
-export const estimateMessageFee = async(l2Recipient, amountDeposit) => {
+export const estimateMsgFee = async(l2Recipient, amountDeposit) => {
     const w3 = new Web3();
     const provider = new SequencerProvider({
         baseUrl: 'https://alpha-mainnet.starknet.io/',
@@ -327,7 +327,9 @@ export const estimateMessageFee = async(l2Recipient, amountDeposit) => {
         payload: [w3.utils.hexToNumberString(l2Recipient), amountDeposit, '0']
     });
 
-    return responseEstimateMessageFee;
+    const msgFee = responseEstimateMessageFee.overall_fee;
+
+    return msgFee;
 }
 
 export const getAmountTokenStark = async(walletAddress, tokenAddress, abiAddress) => {
