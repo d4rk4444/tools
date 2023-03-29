@@ -1,4 +1,3 @@
-import { timeout } from './other.js';
 import HttpsProxyAgent from 'https-proxy-agent';
 import axiosProxy from 'axios-https-proxy-fix';
 import ac from '@antiadmin/anticaptchaofficial';
