@@ -18,7 +18,7 @@ export const dataStakeSTG = async(rpc, amount, unlockTime, addressFrom) => {
     return { encodeABI, estimateGas };
 }
 
-//NOSTRA FINANCE STARKNET
+//NOSTRA FINANCE STARKNET ETH
 export const dataDepositNostra = async(address) => {
     return [{
         contractAddress: chainContract.Starknet.ETH,
@@ -71,6 +71,68 @@ export const dataRepayNostra = async(address) => {
 export const dataWithdrawNostra = async(address) => {
     return [{
         contractAddress: chainContract.Starknet.NostraiETH,
+        entrypoint: "burn",
+        calldata: stark.compileCalldata({
+            burnFrom: address,
+            to: address,
+            amount: {type: 'struct', low: '0xffffffffffffffffffffffffffffffff', high: '0xffffffffffffffffffffffffffffffff'},
+        })
+    }];
+}
+
+//NOSTRA FINANCE STARKNET USDC
+export const dataDepositUSDCNostra = async(address) => {
+    return [{
+        contractAddress: chainContract.Starknet.USDC,
+        entrypoint: "approve",
+        calldata: stark.compileCalldata({
+            spender: chainContract.Starknet.NostraiUSDC,
+            amount: {type: 'struct', low: '5000000', high: '0'},
+        })
+    },
+    {
+        contractAddress: chainContract.Starknet.NostraiUSDC,
+        entrypoint: "mint",
+        calldata: stark.compileCalldata({
+            to: address,
+            amount: {type: 'struct', low: '5000000', high: '0'},
+        })
+    }];
+}
+
+export const dataBorrowUSDCNostra = async(address) => {
+    return [{
+        contractAddress: chainContract.Starknet.NostradUSDC,
+        entrypoint: "mint",
+        calldata: stark.compileCalldata({
+            to: address,
+            amount: {type: 'struct', low: '4275000', high: '0'},
+        })
+    }];
+}
+
+export const dataRepayUSDCNostra = async(address) => {
+    return [{
+        contractAddress: chainContract.Starknet.USDC,
+        entrypoint: "approve",
+        calldata: stark.compileCalldata({
+            spender: chainContract.Starknet.NostradUSDC,
+            amount: {type: 'struct', low: '4317750', high: '0'},
+        })
+    },
+    {
+        contractAddress: chainContract.Starknet.NostradUSDC,
+        entrypoint: "burn",
+        calldata: stark.compileCalldata({
+            burnFrom: address,
+            amount: {type: 'struct', low: '0xffffffffffffffffffffffffffffffff', high: '0xffffffffffffffffffffffffffffffff'},
+        })
+    }];
+}
+
+export const dataWithdrawUSDCNostra = async(address) => {
+    return [{
+        contractAddress: chainContract.Starknet.NostraiUSDC,
         entrypoint: "burn",
         calldata: stark.compileCalldata({
             burnFrom: address,

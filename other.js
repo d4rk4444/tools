@@ -3,7 +3,6 @@ import { privateToAptosAddress } from './web3.js';
 import fs from 'fs';
 import chalk from 'chalk';
 
-
 export const timeout = ms => new Promise(res => setTimeout(res, ms));
 
 export const shuffle = (array) => {
@@ -182,6 +181,8 @@ export const chainContract = {
         NostraiETH: '0x070f8a4fcd75190661ca09a7300b7c93fab93971b67ea712c664d7948a8a54c6',
         NostradETH: '0x040b091cb020d91f4a4b34396946b4d4e2a450dbd9410432ebdbfe10e55ee5e5',
         StargateBridge: '0x073314940630fd6dcda0d772d4c972c4e0a9946bef9dabf4ef84eda8ef542b82',
+        NostraiUSDC: '0x029959a546dda754dc823a7b8aa65862c5825faeaaf7938741d8ca6bfdc69e4e',
+        NostradUSDC: '0x03b6058a9f6029b519bc72b2cc31bcb93ca704d0ab79fec2ae5d43f79ac07f7a'
     },
     approveAmount: '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
 }
