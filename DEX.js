@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import { subtract, multiply, divide } from 'mathjs';
 import { rpc, chainContract } from './other.js';
 import { abiToken, abiTraderJoe, abiBtcBridge, abiBebop, abiMySwapStarknet} from './abi.js';
-import { Account, Contract, ec, json, stark, Provider, hash, number, uint256 } from 'starknet';
+import { Account, Contract, ec, json, stark, Provider, hash, number, uint256, RpcProvider, SequencerProvider } from 'starknet';
 import * as dotenv from 'dotenv';
 dotenv.config()
 
@@ -81,9 +81,9 @@ export const dataSwapTokenToToken = async(rpc, amount, tokenIn, tokenOut, tokenM
 }
 
 //MYSWAP STARKNET
-export const getUSDCAmountStarknet = async(amountETH, slippage) => {
+export const getUSDCAmountStarknet = async(rpc, amountETH, slippage) => {
     const w3 = new Web3();
-    const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
+    const provider = new RpcProvider({ nodeUrl: rpc });
 
     const contract = new Contract(abiMySwapStarknet, chainContract.Starknet.MySwapRouter, provider);
     const pool = await contract.get_pool('0x01');
@@ -94,9 +94,9 @@ export const getUSDCAmountStarknet = async(amountETH, slippage) => {
     return price;
 }
 
-export const getETHAmountStarknet = async(amountUSDC, slippage) => {
+export const getETHAmountStarknet = async(rpc, amountUSDC, slippage) => {
     const w3 = new Web3();
-    const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
+    const provider = new RpcProvider({ nodeUrl: rpc });
 
     const contract = new Contract(abiMySwapStarknet, chainContract.Starknet.MySwapRouter, provider);
     const pool = await contract.get_pool('0x01');
@@ -107,8 +107,8 @@ export const getETHAmountStarknet = async(amountUSDC, slippage) => {
     return price;
 }
 
-export const dataSwapEthToUsdc = async(amountETH, slippage) => {
-    const amountUSDC = await getUSDCAmountStarknet(amountETH, slippage);
+export const dataSwapEthToUsdc = async(rpc, amountETH, slippage) => {
+    const amountUSDC = await getUSDCAmountStarknet(rpc, amountETH, slippage);
 
     const payload = [{
         contractAddress: chainContract.Starknet.ETH,
@@ -132,8 +132,8 @@ export const dataSwapEthToUsdc = async(amountETH, slippage) => {
     return payload;
 }
 
-export const dataSwapUsdcToEth = async(amountUSDC, slippage) => {
-    const amountETH = await getETHAmountStarknet(amountUSDC, slippage);
+export const dataSwapUsdcToEth = async(rpc, amountUSDC, slippage) => {
+    const amountETH = await getETHAmountStarknet(rpc, amountUSDC, slippage);
 
     const payload = [{
         contractAddress: chainContract.Starknet.USDC,
@@ -157,8 +157,8 @@ export const dataSwapUsdcToEth = async(amountUSDC, slippage) => {
     return payload;
 }
 
-export const dataAddLiquidity = async(amountUSDC, slippage) => {
-    const amountETH = await getETHAmountStarknet(amountUSDC, 1);
+export const dataAddLiquidity = async(rpc, amountUSDC, slippage) => {
+    const amountETH = await getETHAmountStarknet(rpc, amountUSDC, 1);
     const minAmountETH = parseInt( multiply(amountETH, slippage) );
     const minAmountUSDC = parseInt( multiply(amountUSDC, slippage) );
 
@@ -194,9 +194,9 @@ export const dataAddLiquidity = async(amountUSDC, slippage) => {
     return payload;
 }
 
-export const getValueTokensLPMySwap = async(amountLP, slippage) => {
+export const getValueTokensLPMySwap = async(rpc, amountLP, slippage) => {
     const w3 = new Web3();
-    const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
+    const provider = new RpcProvider({ nodeUrl: rpc });
 
     const contract = new Contract(abiMySwapStarknet, chainContract.Starknet.MySwapRouter, provider);
     let totalLP = (await contract.get_total_shares('0x01')).total_shares;
@@ -206,7 +206,7 @@ export const getValueTokensLPMySwap = async(amountLP, slippage) => {
     const totalPool = multiply( w3.utils.hexToNumberString(uint256.bnToUint256(pool.token_b_reserves.low).low), 2);
     let amountUSDC = parseInt( divide( multiply( divide(totalPool, totalLP), amountLP), 2 ) );
 
-    const amountETH = await getETHAmountStarknet(amountUSDC, slippage);
+    const amountETH = await getETHAmountStarknet(rpc, amountUSDC, slippage);
     amountUSDC = parseInt( multiply(amountUSDC, slippage) );
 
     return { amountETH, amountUSDC };

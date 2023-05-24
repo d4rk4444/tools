@@ -4,7 +4,7 @@ import ethers from 'ethers';
 import { timeout, generateRandomAmount, rpc, chainContract, explorerTx } from './other.js';
 import { abiStargate, abiToken, abiStarknetId } from './abi.js';
 import { subtract, multiply, divide, composition } from 'mathjs';
-import { Account, Contract, ec, json, stark, Provider, hash, number, uint256, SequencerProvider } from 'starknet';
+import { Account, Contract, ec, json, stark, Provider, hash, number, uint256, SequencerProvider, RpcProvider } from 'starknet';
 import axios from 'axios';
 
 //UTILS
@@ -248,9 +248,9 @@ export const getBalanceUSDCAptos = async(privateKey) => {
 }
 
 //STARKNET
-export const deployStarknetWallet = async(privateKeyStarknet) => {
+export const deployStarknetWallet = async(rpc, privateKeyStarknet) => {
     // connect provider
-    const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
+    const provider = new RpcProvider({ nodeUrl: rpc });
 
     //new Argent X account v0.2.3 :
     const argentXproxyClassHash = "0x25ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918";
@@ -286,8 +286,8 @@ export const deployStarknetWallet = async(privateKeyStarknet) => {
     console.log(`Transaction Hash: ${explorerTx.Starknet + AXdAth}`);
 }
 
-export const sendTransactionStarknet = async(payload, privateKey) => {
-    const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
+export const sendTransactionStarknet = async(rpc, payload, privateKey) => {
+    const provider = new RpcProvider({ nodeUrl: rpc });
     const starkKeyPair = ec.getKeyPair(privateKey);
     const address = await privateToStarknetAddress(privateKey);
     const account = new Account(provider, address, starkKeyPair);
@@ -302,8 +302,8 @@ export const sendTransactionStarknet = async(payload, privateKey) => {
     }
 }
 
-export const estimateInvokeMaxFee = async(payload, privateKey) => {
-    const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
+export const estimateInvokeMaxFee = async(rpc, payload, privateKey) => {
+    const provider = new RpcProvider({ nodeUrl: rpc });
     const starkKeyPair = ec.getKeyPair(privateKey);
     const address = await privateToStarknetAddress(privateKey);
     const account = new Account(provider, address, starkKeyPair);
@@ -332,9 +332,9 @@ export const estimateMsgFee = async(l2Recipient, amountDeposit) => {
     return msgFee;
 }
 
-export const getAmountTokenStark = async(walletAddress, tokenAddress, abiAddress) => {
+export const getAmountTokenStark = async(rpc, walletAddress, tokenAddress, abiAddress) => {
     const w3 = new Web3();
-    const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
+    const provider = new RpcProvider({ nodeUrl: rpc });
 
     if (!abiAddress) { abiAddress = tokenAddress };
     const { abi: abi } = await provider.getClassAt(abiAddress);
@@ -345,8 +345,8 @@ export const getAmountTokenStark = async(walletAddress, tokenAddress, abiAddress
     return w3.utils.hexToNumberString(uint256.bnToUint256(balance[0].low).low);
 }
 
-export const getApprovedStarknetId = async(starknetId) => {
-    const provider = new Provider({ sequencer: { network: 'mainnet-alpha' } });
+export const getApprovedStarknetId = async(rpc, starknetId) => {
+    const provider = new RpcProvider({ nodeUrl: rpc });
     const contract = new Contract(abiStarknetId, chainContract.Starknet.StarknetId, provider);
     try {
         await contract.getApproved({type: 'struct', low: starknetId, high: '0'});
